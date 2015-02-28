@@ -8,6 +8,9 @@ to ease production & maintenance of the bus bench (ie allow direct git pull from
 There is the initial archiver / publisher and web status viewer here - https://github.com/remap/ai_bus
 There is the summer 2014 NDN-IOT sculpture work here - https://github.com/remap/ndn-sculptures
 
+# access
+
+see http://redmine.remap.ucla.edu/projects/ndn-bus/wiki
 
 # dependencies
 ```
