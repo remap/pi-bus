@@ -10,11 +10,11 @@ There is the summer 2014 NDN-IOT sculpture work here - https://github.com/remap/
 
 
 # dependencies
-
+```
 NFD
 Python2.7 
 sudo pip install Enum34 parse
-
+```
 # how to run
 
 from a fresh reboot:
