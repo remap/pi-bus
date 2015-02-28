@@ -1,0 +1,11 @@
+message InstallCertificateCommandMessage {
+    message Name {
+        repeated bytes components = 8;
+    }
+
+    message InstallCertificateCommand {
+        required Name certificateName = 222;
+    }
+
+    required InstallCertificateCommand command = 223;
+}

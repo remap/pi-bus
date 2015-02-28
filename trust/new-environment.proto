@@ -1,0 +1,9 @@
+message NewEnvironmentCommandMessage {
+    message Name {
+        repeated bytes components = 8;
+    }
+    message NewEnvironmentCommand {
+        required Name environmentName = 220;
+    }
+    required NewEnvironmentCommand command = 221;
+}

@@ -1,0 +1,125 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+ndnPublisher.py
+
+this publishes a python dict into a namespace as a content object
+
+Created by nano on 2012-06-15.
+Copyright (c) 2012 UCLA Regents. All rights reserved.
+"""
+
+import sys
+import os
+from pyccn import CCN, Name, Interest, Key, KeyLocator, ContentObject, ContentType, Closure, SignedInfo
+import pyccn
+import time
+import threading
+import ConfigParser
+import publisher as data
+
+config = ConfigParser.RawConfigParser()
+
+def main():
+	readConfig()
+	prefix = config.get("publisher", "prefix")
+	ndnserver = NDServer(prefix)
+	thread = threading.Thread(target=ndnserver.listen)
+	print "Starting NDN server on", prefix, "and waiting for interests"
+	thread.start()
+
+def readConfig():
+	configFile = os.path.dirname(__file__)+'/config.cfg'
+	config.readfp(open(configFile))
+
+import struct
+
+def versionFromTime(t):
+    print "making version from time ",t
+    inttime = int(t * 4096 + 0.5)
+    bintime = struct.pack("!Q", inttime)
+    version = bintime.lstrip(b'\x00')
+    component = b'\xfd' + version
+    print "version component is "+component
+    return component
+
+class NDServer(Closure):
+    def __init__(self, prefixstr ):
+        self.handle = CCN()
+        self.key = self.getApplicationKey()
+        self.keylocator = KeyLocator(self.key)
+        self.prefix = Name(prefixstr)
+
+    def getApplicationKey(self):
+    	key = Key()
+    	keyFile = os.path.dirname(__file__)+"/"+config.get("publisher", "keyFile")
+    	key.fromPEM(filename=keyFile)
+    	return key
+
+    def listen(self):
+        #listen to requests in namespace
+        self.handle.setInterestFilter(self.prefix, self)
+        self.handle.run(-1)
+
+    def publish(self, name, content):
+        # Name
+        # SignedInfo
+        si = SignedInfo()
+        si.type = pyccn.CONTENT_DATA #DATA type is default / not needed, but leaving
+        si.finalBlockID = b'\x00'#
+        si.publisherPublicKeyDigest = self.key.publicKeyID
+        si.keyLocator = self.keylocator
+        FRESHNESS_SECONDS = int(config.get("publisher", "freshness"))
+        si.freshnessSeconds = FRESHNESS_SECONDS
+        co = ContentObject()
+        co.content = content
+        co.name = name
+        co.signedInfo = si
+        co.sign(self.key)
+        return co
+
+    def upcall(self, kind, upcallInfo):
+        interest = upcallInfo.Interest
+        name = interest.name
+        print "Interest Received for "+str(name)
+        print "Name components are ",name.components
+        # if root requested, reply with full dict...
+        if name==self.prefix:   # root 
+            #print 
+            self.message = self.publish(self.prefix, data.getStatusObject())
+            self.handle.put(self.message)
+
+        if interest.exclude is None:
+            print "no exclusions"
+        
+            
+        # return requested status value, if exists
+        elif (len(name) == len(self.prefix)+1):
+			print "Request for one deeper than root: %s" % name[len(self.prefix)]
+			key = name[len(self.prefix)]
+			status = data.getStatusObject()
+			if key in status:
+			    print "Returning: ", key, status[key]
+			    # should use time from bus data sample, but for now we'll use system time
+			    #name = name.append(versionFromTime(time.time()))
+			    # don't have to set dirty to regenerate time as pyccn does that now
+			    self.message = self.publish(name, status[key])
+			    self.handle.put(self.message)
+			else:
+			    print "requested parameter not in status object"
+			    message = "unexpected interest : ",status
+			    self.message = self.publish(name, message)
+			    self.handle.put(self.message)
+        else:
+            print "not sure what is being requested... publish error"
+            self.message = self.publish(name, "unexpected interest")
+            self.handle.put(self.message)
+
+        return pyccn.RESULT_INTEREST_CONSUMED
+        return pyccn.RESULT_OK
+
+
+
+if __name__ == '__main__':
+	main()
+
