@@ -9,5 +9,17 @@ There is the initial archiver / publisher and web status viewer here - https://g
 There is the summer 2014 NDN-IOT sculpture work here - https://github.com/remap/ndn-sculptures
 
 
+# dependencies
 
+NFD
+Python2.7 
+sudo pip install Enum34 parse
 
+# how to run
+
+from a fresh reboot:
+
+export PYTHONPATH=/home/pi/ai-bus/dactyl
+nfdc register / udp://borges.metwi.ucla.edu
+cd /home/pi/ai-bus/dactyl/lx
+python DactylMaster.py 
