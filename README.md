@@ -22,8 +22,8 @@ sudo pip install Enum34 parse
 
 from a fresh reboot:
 ```
-export PYTHONPATH=/home/pi/ai-bus/dactyl
+export PYTHONPATH= ~/pi-bus/dactyl
 nfdc register / udp://borges.metwi.ucla.edu
-cd /home/pi/ai-bus/dactyl/lx
+cd ~/pi-bus/dactyl/lx
 python DactylMaster.py 
 ```
