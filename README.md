@@ -18,8 +18,9 @@ sudo pip install Enum34 parse
 # how to run
 
 from a fresh reboot:
-
- export PYTHONPATH=/home/pi/ai-bus/dactyl
- nfdc register / udp://borges.metwi.ucla.edu
- cd /home/pi/ai-bus/dactyl/lx
- python DactylMaster.py 
+```
+export PYTHONPATH=/home/pi/ai-bus/dactyl
+nfdc register / udp://borges.metwi.ucla.edu
+cd /home/pi/ai-bus/dactyl/lx
+python DactylMaster.py 
+```
