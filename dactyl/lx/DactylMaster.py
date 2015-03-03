@@ -360,24 +360,28 @@ class Dactyl:
             sml.append((0,0,0))
         for i in range(0,100):
             big.append((0,0,0))
+        T0 = time.time()
         while True:
+            t = time.time()
+            #print (1.0/(t-T0), "Hz")
+            T0 = t
             if rgbarray is not None and SENDLIGHTING:
                 for light in rgbcoords["sml"]:
                     n = (light["id"]-1)*3
-                    r = int(math.pow(rgbarray["sml"][n],1.0/2.0))
-                    g = int(math.pow(rgbarray["sml"][n+1],1.0/2.0))
-                    b = int(math.pow(rgbarray["sml"][n+2],1.0/2.0))
+                    r = int(rgbarray["sml"][n])
+                    g = int(rgbarray["sml"][n+1])
+                    b = int(rgbarray["sml"][n+2])
                     sml[light["id"]-1] = (r, g, b)
                 for light in rgbcoords["big"]:
                     n = (light["id"]-1)*3  
-                    r = int(math.pow(rgbarray["big"][n],1.0/2.0))
-                    g = int(math.pow(rgbarray["big"][n+1],1.0/2.0))
-                    b = int(math.pow(rgbarray["big"][n+2],1.0/2.0))
+                    r = int(rgbarray["big"][n])
+                    g = int(rgbarray["big"][n+1])
+                    b = int(rgbarray["big"][n+2])
                     big[light["id"]-1] = (r,g,b)
                     
                 self._sendLightCommand(0, sml)
-                self._sendLightCommand(2, big[0:50])
-                self._sendLightCommand(1, big[50:])
+                self._sendLightCommand(1, big[0:50])
+                self._sendLightCommand(2, big[50:])
             yield From(asyncio.sleep(0.001))
                 
     @asyncio.coroutine    
@@ -471,7 +475,7 @@ class Dactyl:
             
             # Time forcing
             dactyltime.update(force_now = dt)
-            dt += timedelta(minutes=3)
+            dt += timedelta(minutes=10)
     
     
             # Get RGB values, do inhale / exhale mix and states
@@ -483,10 +487,11 @@ class Dactyl:
            
             # Force position
             
-            #lastUpdate["xfvarray"] = [1,0,0,0] # dawn
-            #lastUpdate["xfvarray"] = [0,1,0,0] # day
-            #lastUpdate["xfvarray"] = [0,0,1,0] # dusk
-            #lastUpdate["xfvarray"] = [0,0,0,1] # night
+            
+            lastUpdate["xfvarray"] = [1,0,0,0] # dawn
+            lastUpdate["xfvarray"] = [0,1,0,0] # day
+            lastUpdate["xfvarray"] = [0,0,1,0] # dusk
+            lastUpdate["xfvarray"] = [0,0,0,1] # night
             
             rgbarray["big"] = ( (LUT_big_inhale["dawn"].getRGBnumpy(0)*(1-breath[0]) + LUT_big_inhale["dawn"].getRGBnumpy(0)*(breath[0])) * lastUpdate["xfvarray"][0] + 
                                 (LUT_big_inhale["day"].getRGBnumpy(0)*(1-breath[0]) + LUT_big_exhale["day"].getRGBnumpy(0)*(breath[0])) * lastUpdate["xfvarray"][1] +
