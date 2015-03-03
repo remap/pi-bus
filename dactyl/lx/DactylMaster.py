@@ -94,10 +94,18 @@ class Dactyl:
                 for i in range(25)]
         self.keychain = KeyChain()
         self.certificateName = self.keychain.getDefaultCertificateName()
-    
+     
         
-    
-    
+        self.lightInterestName = [0,0,0]    
+        lightName = Name(self.lightPrefix).append('light'+str(0))   
+        self.lightInterestName[0] = Name(lightName).append('setRGB')
+        lightName = Name(self.lightPrefix).append('light'+str(1))  
+        self.lightInterestName[1] = Name(lightName).append('setRGB')
+        lightName = Name(self.lightPrefix).append('light'+str(2))  
+        self.lightInterestName[2] = Name(lightName).append('setRGB')
+        self.lightCommand = Interest()
+        self.lightCommand.setInterestLifetimeMilliseconds(500)  # If we don't have this, the defaults cause a lot of time to be spent in node.isTimedOut
+        
     
     def draw(self, da, ctx): 
         ## Draw in Visualizer 
@@ -327,9 +335,8 @@ class Dactyl:
         print("TRANSITION CALLBACK: Dusk to Night", now, relt)
         
     def _sendLightCommand(self, lightNum, colorArray):
-        lightName = Name(self.lightPrefix).append('light'+str(lightNum))        
-        interestName = Name(lightName).append('setRGB')
-        commandParams = LightCommandMessage()
+        #self.lightInterestName
+        #commandParams = LightCommandMessage()
         #print("setup command params")
         #for (r,g,b) in colorArray:
         #    messageColor = commandParams.command.pattern.colors.add()
@@ -337,11 +344,11 @@ class Dactyl:
         #    messageColor.g = g
         #    messageColor.b = b
         #print('finished rgb loop')
-        commandName = interestName.append(pickle.dumps(colorArray)) # ProtobufTlv.encode(commandParams))
-        command = Interest(commandName)
+        self.lightCommand.setName(Name(self.lightInterestName[lightNum]).append(pickle.dumps(colorArray))) # ProtobufTlv.encode(commandParams))
+        #command = Interest(commandName)
         
         #self.lightFace.makeCommandInterest(command)
-        self.lightFace.expressInterest(command, self.onLightingResponse, self.onLightingTimeout)
+        self.lightFace.expressInterest(self.lightCommand, self.onLightingResponse, self.onLightingTimeout)
         #print('finish expressing control interest', lightNum)
     def onLightingTimeout(self, interest):
         pass
@@ -363,7 +370,7 @@ class Dactyl:
         T0 = time.time()
         while True:
             t = time.time()+1
-            print (1.0/(t-T0), "Hz")
+            #print (1.0/(t-T0), "Hz")
             T0 = t
             if rgbarray is not None and SENDLIGHTING:
                 for light in rgbcoords["sml"]:
