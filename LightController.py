@@ -2,7 +2,7 @@ from lighting.KinetSender import KinetSender
 import logging
 import time
 import sys
-
+import cPickle as pickle
 from pyndn import Name, Face, Interest, Data, ThreadsafeFace
 from pyndn import Sha256WithRsaSignature
 from pyndn.security import KeyChain
@@ -67,31 +67,34 @@ class LightController():
             self.keychain.sign(data, self.certificateName)
         else:
             data.setSignature(Sha256WithRsaSignature())
-
+    
     def onLightingCommand(self, prefix, interest, transport, prefixId):
         # NOTE: mix pattern is currently ignored
         interestName = Name(interest.getName())
         d = Data(interest.getName())
         try:
-            commandComponent = interest.getName()[len(prefix)]
+            #commandComponent = interest.getName()[len(prefix)]
             commandParams = interest.getName()[len(prefix)+1]
+            newPayload = pickle.loads(str(commandParams.getValue()))
+            #print(colorArray)
 
-            lightingCommand = LightCommandMessage()
-            ProtobufTlv.decode(lightingCommand, commandParams.getValue())
+            # lightingCommand = LightCommandMessage()
+            # ProtobufTlv.decode(lightingCommand, commandParams.getValue())
 
-            # if values are missing and repeat is false, keep previous values
-            payloadLen = self.STRAND_SIZE*self.COLORS_PER_LIGHT
-            commandInfo = lightingCommand.command
-            pattern = chain(*[(c.r, c.g, c.b) for c in commandInfo.pattern.colors])
-            if commandInfo.repeat:
-                pattern = cycle(pattern)
-                newPayload = [pattern.next() for i in range(payloadLen)]
-            else:
-                pattern = list(pattern)
-                patternLen = min(len(pattern), payloadLen)
-                newPayload = pattern[:patternLen]+self.payloadBuffer[0][patternLen:]
+            # # if values are missing and repeat is false, keep previous values
+            # payloadLen = self.STRAND_SIZE*self.COLORS_PER_LIGHT
+            # commandInfo = lightingCommand.command
+            # pattern = chain(*[(c.r, c.g, c.b) for c in commandInfo.pattern.colors])
+            # if commandInfo.repeat:
+            #     pattern = cycle(pattern)
+            #     newPayload = [pattern.next() for i in range(payloadLen)]
+            # else:
+            #     pattern = list(pattern)
+            #     patternLen = min(len(pattern), payloadLen)
+            #     newPayload = pattern[:patternLen]+self.payloadBuffer[0][patternLen:]
             
             self.log.debug('New payload:\n\t{}'.format(newPayload))
+            print('New payload:\n\t{}'.format(newPayload))
             self.payloadBuffer[0] = newPayload
             self.sendLightPayload(1)
             d.setContent('ACK')
@@ -104,7 +107,7 @@ class LightController():
             #self.signData(d)
 
         encodedData = d.wireEncode()
-        transport.send(encodedData.toBuffer())
+        #transport.send(encodedData.toBuffer())
 
     def onRegisterFailed(self, prefix):
         self.log.error("Could not register " + prefix.toUri())
