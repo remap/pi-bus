@@ -304,7 +304,7 @@ class Dactyl:
             interest.setInterestLifetimeMilliseconds(4000)
             try:
                 # avoid blocking when WiFi is down
-                print("Expressed Interest")
+                #print("Expressed Interest")
                 self.busFace.expressInterest(interestName, self.onBusData, self.onBusTimeout)
             except IOError:
                 print("Cannot resolve bus data publisher")
@@ -326,21 +326,23 @@ class Dactyl:
     def cbDuskToNight(self, now, relt):
         print("TRANSITION CALLBACK: Dusk to Night", now, relt)
         
-    def _sendLightCommand(self, lightNum, r, g, b):
+    def _sendLightCommand(self, lightNum, colorArray):
         lightName = Name(self.lightPrefix).append('light'+str(lightNum))        
         interestName = Name(lightName).append('setRGB')
         commandParams = LightCommandMessage()
-        messageColor = commandParams.command.pattern.colors.add()
-        messageColor.r = r
-        messageColor.g = g
-        messageColor.b = b 
-
+        #print("setup command params")
+        for (r,g,b) in colorArray:
+            messageColor = commandParams.command.pattern.colors.add()
+            messageColor.r = r
+            messageColor.g = g
+            messageColor.b = b
+        #print('finished rgb loop')
         commandName = interestName.append(ProtobufTlv.encode(commandParams))
         command = Interest(commandName)
         
         #self.lightFace.makeCommandInterest(command)
         self.lightFace.expressInterest(command, self.onLightingResponse, self.onLightingTimeout)
-    
+        #print('finish expressing control interest', lightNum)
     def onLightingTimeout(self, interest):
         pass
     
@@ -351,22 +353,32 @@ class Dactyl:
     def issueLightingCommands(self):
         global rgbarray
     
+        
+        sml = []
+        big = []
+        for i in range(0,50): 
+            sml.append((0,0,0))
+        for i in range(0,100):
+            big.append((0,0,0))
         while True:
-            if rgbarray is not None:
+            if rgbarray is not None and SENDLIGHTING:
                 for light in rgbcoords["sml"]:
                     n = (light["id"]-1)*3
-                    r = int(rgbarray["sml"][n])
-                    g = int(rgbarray["sml"][n+1])
-                    b = int(rgbarray["sml"][n+2])
-                    if SENDLIGHTING: self._sendLightCommand(n, r, g, b)
+                    r = int(math.pow(rgbarray["sml"][n],1.0/2.0))
+                    g = int(math.pow(rgbarray["sml"][n+1],1.0/2.0))
+                    b = int(math.pow(rgbarray["sml"][n+2],1.0/2.0))
+                    sml[light["id"]-1] = (r, g, b)
                 for light in rgbcoords["big"]:
                     n = (light["id"]-1)*3  
-                    r = int(rgbarray["big"][n])
-                    g = int(rgbarray["big"][n+1])
-                    b = int(rgbarray["big"][n+2])
-                    if SENDLIGHTING: self._sendLightCommand(n+50, r, g, b)
-            #TODO: set animation delay
-            yield From(asyncio.sleep(0.010))
+                    r = int(math.pow(rgbarray["big"][n],1.0/2.0))
+                    g = int(math.pow(rgbarray["big"][n+1],1.0/2.0))
+                    b = int(math.pow(rgbarray["big"][n+2],1.0/2.0))
+                    big[light["id"]-1] = (r,g,b)
+                    
+                self._sendLightCommand(0, sml)
+                self._sendLightCommand(2, big[0:50])
+                self._sendLightCommand(1, big[50:])
+            yield From(asyncio.sleep(0.001))
                 
     @asyncio.coroutine    
     def calcmain(self):
