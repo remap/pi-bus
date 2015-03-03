@@ -11,7 +11,7 @@ from lx.DactylLUT import DactylLUT
 import datetime, time, math
 from datetime import timedelta
 import sys, argparse
-
+import cPickle as pickle
 
 
 if sys.version_info[0] < 3: 
@@ -331,13 +331,13 @@ class Dactyl:
         interestName = Name(lightName).append('setRGB')
         commandParams = LightCommandMessage()
         #print("setup command params")
-        for (r,g,b) in colorArray:
-            messageColor = commandParams.command.pattern.colors.add()
-            messageColor.r = r
-            messageColor.g = g
-            messageColor.b = b
+        #for (r,g,b) in colorArray:
+        #    messageColor = commandParams.command.pattern.colors.add()
+        #    messageColor.r = r
+        #    messageColor.g = g
+        #    messageColor.b = b
         #print('finished rgb loop')
-        commandName = interestName.append(ProtobufTlv.encode(commandParams))
+        commandName = interestName.append(pickle.dumps(colorArray)) # ProtobufTlv.encode(commandParams))
         command = Interest(commandName)
         
         #self.lightFace.makeCommandInterest(command)
@@ -356,14 +356,14 @@ class Dactyl:
         
         sml = []
         big = []
-        for i in range(0,50): 
-            sml.append((0,0,0))
-        for i in range(0,100):
-            big.append((0,0,0))
+        for i in range(0,50*3): 
+            sml.append(0)
+        for i in range(0,100*3):
+            big.append(0)
         T0 = time.time()
         while True:
-            t = time.time()
-            #print (1.0/(t-T0), "Hz")
+            t = time.time()+1
+            print (1.0/(t-T0), "Hz")
             T0 = t
             if rgbarray is not None and SENDLIGHTING:
                 for light in rgbcoords["sml"]:
@@ -371,17 +371,21 @@ class Dactyl:
                     r = int(rgbarray["sml"][n])
                     g = int(rgbarray["sml"][n+1])
                     b = int(rgbarray["sml"][n+2])
-                    sml[light["id"]-1] = (r, g, b)
+                    sml[n] = r
+                    sml[n+1] = g
+                    sml[n+2] = b
                 for light in rgbcoords["big"]:
                     n = (light["id"]-1)*3  
                     r = int(rgbarray["big"][n])
                     g = int(rgbarray["big"][n+1])
                     b = int(rgbarray["big"][n+2])
-                    big[light["id"]-1] = (r,g,b)
+                    big[n] = r
+                    big[n+1] = g
+                    big[n+2] = b
                     
                 self._sendLightCommand(0, sml)
-                self._sendLightCommand(1, big[0:50])
-                self._sendLightCommand(2, big[50:])
+                self._sendLightCommand(1, big[0:150])
+                self._sendLightCommand(2, big[150:])
             yield From(asyncio.sleep(0.001))
                 
     @asyncio.coroutine    
@@ -475,7 +479,7 @@ class Dactyl:
             
             # Time forcing
             dactyltime.update(force_now = dt)
-            dt += timedelta(minutes=10)
+            dt += timedelta(minutes=3)
     
     
             # Get RGB values, do inhale / exhale mix and states
