@@ -17,13 +17,14 @@ see http://redmine.remap.ucla.edu/projects/ndn-bus/wiki
 NFD
 Python2.7 
 sudo pip install Enum34 parse
+sudo cp /usr/share/zoneinfo/US/Pacific-New /etc/localtime
 ```
 # how to run
 
 from a fresh reboot:
 ```
-export PYTHONPATH=/home/pi/ai-bus/dactyl
+export PYTHONPATH= ~/pi-bus/dactyl
 nfdc register / udp://borges.metwi.ucla.edu
-cd /home/pi/ai-bus/dactyl/lx
+cd ~/pi-bus/dactyl/lx
 python DactylMaster.py 
 ```
