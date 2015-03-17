@@ -94,7 +94,7 @@ class LightController():
             #     newPayload = pattern[:patternLen]+self.payloadBuffer[0][patternLen:]
             
             self.log.debug('New payload:\n\t{}'.format(newPayload))
-            print('New payload:\n\t{}'.format(newPayload))
+            print('New payload for {}'.format(self.lightAddress))
             self.payloadBuffer[0] = newPayload
             self.sendLightPayload(1)
             d.setContent('ACK')
@@ -137,6 +137,7 @@ if __name__ == '__main__':
     for i in range(len(lightIPs)):
         lightName = Name(lightPrefix).append('light'+str(i))
         controller = LightController(prefix=lightName, lightIP=lightIPs[i])
+	
         allLights.append(controller)
 
 

@@ -103,8 +103,14 @@ class Dactyl:
         self.lightInterestName[1] = Name(lightName).append('setRGB')
         lightName = Name(self.lightPrefix).append('light'+str(2))  
         self.lightInterestName[2] = Name(lightName).append('setRGB')
-        self.lightCommand = Interest()
-        self.lightCommand.setInterestLifetimeMilliseconds(500)  # If we don't have this, the defaults cause a lot of time to be spent in node.isTimedOut
+        self.lightCommand = [0,0,0]
+        self.lightCommand[0] = Interest()
+        self.lightCommand[1] = Interest()
+        self.lightCommand[2] = Interest()
+        
+        self.lightCommand[0].setInterestLifetimeMilliseconds(500)  # If we don't have this, the defaults cause a lot of time to be spent in node.isTimedOut
+        self.lightCommand[1].setInterestLifetimeMilliseconds(500)
+        self.lightCommand[2].setInterestLifetimeMilliseconds(500)
         
     
     def draw(self, da, ctx): 
@@ -344,11 +350,13 @@ class Dactyl:
         #    messageColor.g = g
         #    messageColor.b = b
         #print('finished rgb loop')
-        self.lightCommand.setName(Name(self.lightInterestName[lightNum]).append(pickle.dumps(colorArray))) # ProtobufTlv.encode(commandParams))
-        #command = Interest(commandName)
-        
+        #self.lightCommand.setName(Name(self.lightInterestName[lightNum]).append(pickle.dumps(colorArray))) # ProtobufTlv.encode(commandParams))
+        n = Name(self.lightInterestName[lightNum]).append(pickle.dumps(colorArray))
+        #command = Interest(n)
+        self.lightCommand[lightNum].setName(n)
+        #print (self.lightCommand.toUri())
         #self.lightFace.makeCommandInterest(command)
-        self.lightFace.expressInterest(self.lightCommand, self.onLightingResponse, self.onLightingTimeout)
+        self.lightFace.expressInterest(self.lightCommand[lightNum], self.onLightingResponse, self.onLightingTimeout)
         #print('finish expressing control interest', lightNum)
     def onLightingTimeout(self, interest):
         pass
@@ -478,15 +486,15 @@ class Dactyl:
             #print (t, t-t1, bus_prox)
             #if bus_prox > 1: bus_prox = 0 
             bus_prox = 1 - self.currentETA/1000.0
-            
+  
             # Calculate breth
             breath = [self.wave(t, 0, 0, bus_prox), self.wave(t, 0.75, 0, bus_prox), self.wave(t, 1, 0, bus_prox)]
             
             t1 = t
             
             # Time forcing
-            dactyltime.update(force_now = dt)
-            dt += timedelta(minutes=3)
+            dactyltime.update()#(force_now = dt)
+            #dt += timedelta(minutes=4)
     
     
             # Get RGB values, do inhale / exhale mix and states
@@ -499,9 +507,9 @@ class Dactyl:
             # Force position
             
             
-            lastUpdate["xfvarray"] = [1,0,0,0] # dawn
-            lastUpdate["xfvarray"] = [0,1,0,0] # day
-            lastUpdate["xfvarray"] = [0,0,1,0] # dusk
+            #lastUpdate["xfvarray"] = [1,0,0,0] # dawn
+            #lastUpdate["xfvarray"] = [0,1,0,0] # day
+            #lastUpdate["xfvarray"] = [0,0,1,0] # dusk
             lastUpdate["xfvarray"] = [0,0,0,1] # night
             
             rgbarray["big"] = ( (LUT_big_inhale["dawn"].getRGBnumpy(0)*(1-breath[0]) + LUT_big_inhale["dawn"].getRGBnumpy(0)*(breath[0])) * lastUpdate["xfvarray"][0] + 
