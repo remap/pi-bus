@@ -378,7 +378,7 @@ class Dactyl:
         T0 = time.time()
         while True:
             t = time.time()+1
-            #print (1.0/(t-T0), "Hz")
+            print (1.0/(t-T0), "Hz")
             T0 = t
             if rgbarray is not None and SENDLIGHTING:
                 for light in rgbcoords["sml"]:
@@ -511,6 +511,7 @@ class Dactyl:
             #lastUpdate["xfvarray"] = [0,1,0,0] # day
             #lastUpdate["xfvarray"] = [0,0,1,0] # dusk
             lastUpdate["xfvarray"] = [0,0,0,1] # night
+
             
             rgbarray["big"] = ( (LUT_big_inhale["dawn"].getRGBnumpy(0)*(1-breath[0]) + LUT_big_inhale["dawn"].getRGBnumpy(0)*(breath[0])) * lastUpdate["xfvarray"][0] + 
                                 (LUT_big_inhale["day"].getRGBnumpy(0)*(1-breath[0]) + LUT_big_exhale["day"].getRGBnumpy(0)*(breath[0])) * lastUpdate["xfvarray"][1] +
