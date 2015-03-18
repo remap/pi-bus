@@ -11,16 +11,18 @@ from lx.DactylLUT import DactylLUT
 import datetime, time, math
 from datetime import timedelta
 import sys, argparse
-import cPickle as pickle
+
 
 
 if sys.version_info[0] < 3: 
+    import cPickle as pickle
     print("Python version less than 3, enabling protobuf and sending lighting commands")
     from ConfigParser import RawConfigParser
     from lx.light_command_pb2 import LightCommandMessage
     SENDLIGHTING=True
     ASYNCIO_DEBUG = False   # Set to get stack traces from coroutines in Python 2, used in the main loop setup below
 else:
+    import pickle
     print("Python version 3, not sending lighting commands...")
     from configparser import RawConfigParser
     SENDLIGHTING=False
@@ -40,7 +42,7 @@ logging.getLogger('trollius').addHandler(logging.StreamHandler())
 
 USE_LOOKUP = True 
 GUIAVAILABLE = True
-SHOWGUI = False
+SHOWGUI = True
 try:
     import cairo
     from gi.repository import Gtk
@@ -284,7 +286,10 @@ class Dactyl:
         
         return W1   # flip to re-orient
     
-
+    def square(self, t, x, y, bus_prox):
+        f = bus_prox*0.75
+        if abs(math.sin(t* (f*2.0*math.pi) )) > 0.5: return 1.0
+        return 0.0
     
     
     # Adeola unmodified except for From() to from
@@ -378,7 +383,7 @@ class Dactyl:
         T0 = time.time()
         while True:
             t = time.time()+1
-            print (1.0/(t-T0), "Hz")
+            #print (1.0/(t-T0), "Hz")
             T0 = t
             if rgbarray is not None and SENDLIGHTING:
                 for light in rgbcoords["sml"]:
@@ -475,26 +480,51 @@ class Dactyl:
         rgbcoords ["sml"] = []     
         
     
+
         while True:
             
             # Generate breathing wave
             t = time.time()-T
             # bus_prox goes to 1 when bus arrives
             
-            
-            #bus_prox += (t-t1)/60.0
+            ## TESTING:
+            #bus_prox += (t-t1)/30.0
             #print (t, t-t1, bus_prox)
-            #if bus_prox > 1: bus_prox = 0 
-            bus_prox = 1 - self.currentETA/1000.0
-  
-            # Calculate breth
-            breath = [self.wave(t, 0, 0, bus_prox), self.wave(t, 0.75, 0, bus_prox), self.wave(t, 1, 0, bus_prox)]
+            #if bus_prox > 1: bus_prox = 0.0
             
+            ## FIELD
+            bus_prox = 1 - self.currentETA/1000.0
+            if bus_prox < 0.1: bus_prox = 0 
+            
+            ## As bus is really close start flashing
+
+            prox_cutoff = 0.8
+            if bus_prox > prox_cutoff: 
+                  breath = [
+                      self.square(t,0,0,bus_prox), 
+                      self.square(t,0,0,bus_prox),
+                      self.square(t,0,0,bus_prox)
+                      ]        
+            # Calculate breath
+            else:
+                breath = [
+                          self.wave(t, 0, 0, bus_prox), 
+                          self.wave(t, 0.75, 0, bus_prox),
+                          self.wave(t, 1, 0, bus_prox) 
+                          ]  
+                     
             t1 = t
             
             # Time forcing
-            dactyltime.update()#(force_now = dt)
+            
+            ## JB FIELD: 
+            dactyltime.update()
+            
+            ## TESTING:
+            
+            #dactyltime.update(force_now = dt)
             #dt += timedelta(minutes=4)
+  
     
     
             # Get RGB values, do inhale / exhale mix and states
@@ -506,12 +536,12 @@ class Dactyl:
            
             # Force position
             
+            ## FORCE STATE
             
             #lastUpdate["xfvarray"] = [1,0,0,0] # dawn
             #lastUpdate["xfvarray"] = [0,1,0,0] # day
             #lastUpdate["xfvarray"] = [0,0,1,0] # dusk
-            lastUpdate["xfvarray"] = [0,0,0,1] # night
-
+            #lastUpdate["xfvarray"] = [0,0,0,1] # night
             
             rgbarray["big"] = ( (LUT_big_inhale["dawn"].getRGBnumpy(0)*(1-breath[0]) + LUT_big_inhale["dawn"].getRGBnumpy(0)*(breath[0])) * lastUpdate["xfvarray"][0] + 
                                 (LUT_big_inhale["day"].getRGBnumpy(0)*(1-breath[0]) + LUT_big_exhale["day"].getRGBnumpy(0)*(breath[0])) * lastUpdate["xfvarray"][1] +
