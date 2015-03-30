@@ -633,12 +633,12 @@ if __name__ == '__main__':
     
     while True:
         d = Dactyl(config)
-        #try:
-        d.start()
-        #except KeyboardInterrupt:
-        #    break
-        #except Exception as e:
-        #    traceback.print_stack()
-        #    print(e)
-        #finally:
-        #    d.stop()
+        try:
+            d.start()
+        except KeyboardInterrupt:
+            break
+        except Exception as e:
+            traceback.print_stack()
+            print(e)
+        finally:
+            d.stop()
